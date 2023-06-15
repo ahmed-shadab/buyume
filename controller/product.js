@@ -1,32 +1,26 @@
 const productModel = require('../model/products')
-exports.getData = async (req, res, next) => {
-    const data = await productModel.getData()
-    return res.status(200).json(data)
-}
-
-exports.postData = async (req, res, next) => {
-    const productId = req.body.productId;
-    const quantity = req.body.quantity;
-    const operation = req.body.operation;
-    productModel.postData({ productId: productId, quantity: quantity, operation: operation }).then((result) => {
-        console.log(result);
-        return res.status(201).send("data successfully inserted");
-    }).catch(err => {
-        console.log('error', err);
-    })
-}
-exports.postMultipleData = async(req, res, next) => {
-    // Promise.all
-    console.log(req.body);
-    const myPromises = [];
-    for(let i=0; i<req.body.length;i++){
-        myPromises.push(productModel.postData(req.body[i]));
+module.exports.operation = async (req, res) => {
+    const data = req.body;
+    for(let i=0; i<data.length; i++){
+        let result = await productModel.findData({productId:data[i].productId})
+        if(result){
+            if(data[i].operation == "add"){
+                result.quantity= Number(result.quantity)+Number(data[i].quantity);
+            }
+            else{
+                if(result.quantity<data[i].quantity){
+                    throw new Error(`product id ${data[i].productId} quantity is less to subtract`)
+                }
+                else{
+                    result.quantity-=data[i].quantity;
+                }
+            }
+            const updateData = await productModel.updateData({productId:data[i].productId}, {quantity:result.quantity});
+            console.log(updateData);
+        }
+        else{
+            await productModel.insertData({productId:data[i].productId,quantity:data[i].quantity});
+        }
     }
-    Promise.all(myPromises).then(res=>{
-        console.log('Result',res);
-    }).catch(err=>{
-        console.log(err);
-    })
-    return res.send("true")
-
+    res.status(202).send("Ok")
 }

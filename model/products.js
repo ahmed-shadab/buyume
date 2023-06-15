@@ -6,18 +6,21 @@ async function main(){
 }
 const schema = {
     productId: Number,
-    quantity: String,
-    operation: String
+    quantity: String
 }
 
 const productSchema = new mongoose.Schema(schema);
 const model = new mongoose.model('product', productSchema);
 
-exports.getData = async () => {
-    const result = await model.find()
-    return result
+module.exports.findData = async (data) => {
+    return model.findOne(data);
 }
-exports.postData = (data) => {
-    const productData = new model(data);
-    return productData.save();
+
+module.exports.updateData = async (filter, data) => {
+    return model.updateOne(filter,data);
+}
+
+module.exports.insertData = async(data) => {
+    const product = new model(data)
+    return product.save()
 }
